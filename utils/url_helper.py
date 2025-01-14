@@ -1,6 +1,6 @@
 from faker import Faker
 
-def get_random_category_url(base_url="https://www.rentbyowner.com/all/"):
+def get_random_category_url(base_url="https://www.varoom.com/all/"):
     """
     Generates a random category URL by appending a random country to the base URL.
 
