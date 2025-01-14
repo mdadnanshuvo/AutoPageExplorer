@@ -63,7 +63,7 @@ class CategoryPage(BasePage):
 
     def get_all_property_tiles(self, total_tiles):
         """
-        Retrieve all property tiles on the page by dynamically scrolling.
+        Retrieve all property tiles within the specified container.
 
         Args:
             total_tiles (int): Total number of tiles to load.
@@ -71,10 +71,15 @@ class CategoryPage(BasePage):
         Returns:
             list: List of WebElements representing the loaded tiles.
         """
-        return scroll_and_load(self.driver, self.locators['property_tiles'], total_tiles)
+        container_xpath = '//div[@id="js-section-0-tiles"]'
+        tiles_xpath = './/div[contains(@class, "js-property-tile")]'
+
+        # Locate the container element
+        container_element = self.driver.find_element(By.XPATH, container_xpath)
+        return scroll_and_load(self.driver, tiles_xpath, total_tiles, container=container_element)
 
     def get_random_property_tiles(self, all_tiles, count=10):
-        """
+        """ 
         Get a random subset of property tiles.
 
         Args:
