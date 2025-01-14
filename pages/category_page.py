@@ -132,12 +132,12 @@ class CategoryPage(BasePage):
                 print(f"Loaded {len(loaded_tiles)} of {total_tiles} tiles...")
             
             # Final wait for any remaining loading
-            time.sleep(2)
+            time.sleep(5)
             print(f"Finished loading tiles. Total loaded: {len(loaded_tiles)}")
             
             # Smooth scroll back to top
             self.driver.execute_script("window.scrollTo({top: 0, behavior: 'smooth'});")
-            time.sleep(2)
+            time.sleep(5)
             
             return loaded_tiles
             
@@ -168,7 +168,7 @@ class CategoryPage(BasePage):
             try:
                 # Scroll tile into view with more basic approach
                 self.scroll_to_tile(tile)
-                time.sleep(2)  # Wait for scroll to complete
+                time.sleep(5)  # Wait for scroll to complete
                 
                 # Try to extract data even if visibility check fails
                 try:
@@ -183,7 +183,7 @@ class CategoryPage(BasePage):
                     print(f"Error processing tile {random_index}: {e}")
                 
                 # Random delay between processing
-                time.sleep(random.uniform(2.0, 3.0))
+                time.sleep(random.uniform(5.0, 5.0))
                 
             except Exception as e:
                 print(f"Error with tile {random_index}: {e}")
@@ -198,7 +198,7 @@ class CategoryPage(BasePage):
         try:
             # Basic scroll into view
             self.driver.execute_script("arguments[0].scrollIntoView(true);", tile)
-            time.sleep(1)
+            time.sleep(5)
             
             # Small adjustment to account for any headers
             self.driver.execute_script("window.scrollBy(0, -100);")
@@ -237,10 +237,10 @@ class CategoryPage(BasePage):
                 print(f"Attempt {attempt + 1} failed for tile: {e}")
                 attempt += 1
                 if attempt < retries:
-                    time.sleep(2)
+                    time.sleep(5)
                     # Try scrolling again
                     self.scroll_to_tile(tile)
-                    time.sleep(1)
+                    time.sleep(5)
 
         raise Exception(f"Failed to process tile after {retries} attempts.")
 
