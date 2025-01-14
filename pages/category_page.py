@@ -10,6 +10,7 @@ from utils.url_helper import get_random_category_url
 from utils.page_checker import is_category_page
 from .base_page import BasePage
 import time
+import random
 
 
 class CategoryPage(BasePage):
@@ -20,23 +21,14 @@ class CategoryPage(BasePage):
     def __init__(self, driver):
         super().__init__(driver)
         self.locators = {
-            'property_tiles': '//div[contains(@class, "property-tiles")]',
-            'map_section': '//div[@id="map-info-window"]',  # Example map section ID; adjust based on actual HTML
-            'map_content': '//div[@class="map-content"]'  # Adjust to target specific content in the map section
+            'property_tiles': '//div[contains(@class, "js-tiles-container")]',
+            'map_section': '//div[@id="map-info-window"]',
+            'map_content': '//div[@class="map-content"]'
         }
 
     def navigate_to_valid_category_page(self, max_attempts=10):
         """
         Navigate to a valid Category Page. Retry if the page is invalid.
-
-        Args:
-            max_attempts (int): Maximum number of retries to generate a valid page.
-
-        Returns:
-            str: The valid URL navigated to.
-
-        Raises:
-            Exception: If no valid page is found after max_attempts.
         """
         attempts = 0
         while attempts < max_attempts:
@@ -54,60 +46,197 @@ class CategoryPage(BasePage):
 
     def get_total_tiles(self):
         """
-        Retrieve the total number of tiles on the page using a utility function.
-
-        Returns:
-            int: Total number of tiles on the page.
+        Retrieve the total number of tiles on the page.
         """
         return get_total_tiles_count(self.driver)
 
-    def get_all_property_tiles(self, total_tiles):
+    def load_all_property_tiles(self, total_tiles):
         """
-        Retrieve all property tiles within the specified container.
-
+        First phase: Load all property tiles by scrolling to the bottom.
+        
         Args:
-            total_tiles (int): Total number of tiles to load.
-
+            total_tiles (int): Expected number of tiles to load.
+            
         Returns:
-            list: List of WebElements representing the loaded tiles.
+            list: List of all loaded tile elements.
         """
-        container_xpath = '//div[@id="js-section-0-tiles"]'
-        tiles_xpath = './/div[contains(@class, "js-property-tile")]'
+        print(f"Starting to load all {total_tiles} property tiles...")
+        
+        # Initialize variables
+        loaded_tiles = []
+        last_count = 0
+        attempts = 0
+        max_attempts = 30  # Maximum scrolling attempts
+        
+        try:
+            # Find the container that holds all tiles
+            container = self.driver.find_element(By.XPATH, '//div[@id="js-tiles-container"]')
+            
+            # Scroll until we've loaded all tiles or reached max attempts
+            while len(loaded_tiles) < total_tiles and attempts < max_attempts:
+                # Scroll to bottom of container
+                self.driver.execute_script(
+                    "arguments[0].scrollTo(0, arguments[0].scrollHeight);", 
+                    container
+                )
+                
+                # Wait for new content to load
+                time.sleep(2)
+                
+                # Get current tiles
+                loaded_tiles = container.find_elements(
+                    By.XPATH, 
+                    './/div[contains(@class, "js-property-tile")]'
+                )
+                
+                # Check if we've loaded new tiles
+                if len(loaded_tiles) == last_count:
+                    attempts += 1
+                else:
+                    last_count = len(loaded_tiles)
+                    attempts = 0  # Reset attempts when we find new tiles
+                
+                print(f"Loaded {len(loaded_tiles)} of {total_tiles} tiles...")
+            
+            print(f"Finished loading tiles. Total loaded: {len(loaded_tiles)}")
+            
+            # Scroll back to top
+            self.driver.execute_script("window.scrollTo(0, 0);")
+            time.sleep(1)
+            
+            return loaded_tiles
+            
+        except Exception as e:
+            print(f"Error loading property tiles: {e}")
+            return []
 
-        # Locate the container element
-        container_element = self.driver.find_element(By.XPATH, container_xpath)
-        return scroll_and_load(self.driver, tiles_xpath, total_tiles, container=container_element)
-
-    def get_random_property_tiles(self, all_tiles, count=10):
-        """ 
-        Get a random subset of property tiles.
-
+    def process_tiles_randomly_one_by_one(self, all_tiles, count=10):
+        """
+        Second phase: Process random tiles one by one with centered scrolling.
+        
         Args:
             all_tiles (list): List of all loaded tiles.
-            count (int): Number of random tiles to select.
-
+            count (int): Number of tiles to process.
+            
         Returns:
-            list: Randomly selected property tiles.
+            list: List of processed tile data.
         """
-        tile_count = min(len(all_tiles), count)
-        print(f"Found {len(all_tiles)} tiles, selecting {tile_count} random tiles.")
-        return select_random_elements(all_tiles, tile_count)
+        processed_indices = set()
+        results = []
+        
+        # Calculate number of tiles to process
+        num_tiles = min(len(all_tiles), count)
+        print(f"Starting to process {num_tiles} random tiles...")
+        
+        for i in range(num_tiles):
+            # Select a random unprocessed tile
+            while True:
+                random_index = random.randint(0, len(all_tiles) - 1)
+                if random_index not in processed_indices:
+                    processed_indices.add(random_index)
+                    break
+            
+            tile = all_tiles[random_index]
+            print(f"\nProcessing tile {i + 1}/{num_tiles} (index: {random_index})")
+            
+            try:
+                # Center the selected tile
+                self.scroll_tile_to_center(tile)
+                
+                # Wait for tile to be fully visible
+                if self.wait_for_tile_visibility(tile):
+                    # Process the tile
+                    data = self.process_tile(tile)
+                    results.append({
+                        'index': random_index,
+                        'data': data
+                    })
+                    print(f"Successfully processed tile {i + 1}/{num_tiles}")
+                else:
+                    print(f"Skipping tile {random_index} - visibility check failed")
+                
+            except Exception as e:
+                print(f"Error processing tile {random_index}: {e}")
+                continue
+            
+            # Random delay between processing tiles
+            time.sleep(random.uniform(1.5, 3.0))
+        
+        return results
+
+    def scroll_tile_to_center(self, tile):
+        """
+        Scroll a specific tile to the center of the viewport.
+        """
+        try:
+            # Initial scroll to bring element into rough center
+            self.driver.execute_script("""
+                arguments[0].scrollIntoView({
+                    behavior: 'smooth',
+                    block: 'center',
+                    inline: 'center'
+                });
+            """, tile)
+            
+            # Wait for initial scroll
+            time.sleep(1)
+            
+            # Fine-tune the position
+            viewport_height = self.driver.execute_script("return window.innerHeight;")
+            elem_position = tile.location['y']
+            
+            # Calculate center position
+            ideal_scroll = elem_position - (viewport_height / 2) + (tile.size['height'] / 2)
+            
+            # Adjust if needed
+            self.driver.execute_script(
+                "window.scrollTo({top: arguments[0], behavior: 'smooth'});", 
+                ideal_scroll
+            )
+            
+            # Wait for final positioning
+            time.sleep(0.5)
+            
+        except Exception as e:
+            print(f"Error centering tile: {e}")
+
+    def wait_for_tile_visibility(self, tile, timeout=10):
+        """
+        Ensure tile is fully visible and loaded.
+        """
+        try:
+            wait = WebDriverWait(self.driver, timeout)
+            
+            # Check basic visibility
+            wait.until(EC.visibility_of(tile))
+            
+            # Wait for tile to be interactive
+            wait.until(lambda d: (
+                tile.is_displayed() and
+                tile.is_enabled() and
+                tile.get_attribute('class') is not None
+            ))
+            
+            # Verify tile is in viewport
+            is_in_viewport = self.driver.execute_script("""
+                var elem = arguments[0];
+                var rect = elem.getBoundingClientRect();
+                return (
+                    rect.top >= 0 &&
+                    rect.left >= 0 &&
+                    rect.bottom <= (window.innerHeight || document.documentElement.clientHeight) &&
+                    rect.right <= (window.innerWidth || document.documentElement.clientWidth)
+                );
+            """, tile)
+            
+            return is_in_viewport
+            
+        except Exception as e:
+            print(f"Error checking tile visibility: {e}")
+            return False
 
     def process_tile(self, tile, wait_time=20, retries=3):
-        """
-        Process a single tile, including extracting info and interacting with the map icon.
-
-        Args:
-            tile (WebElement): The tile element.
-            wait_time (int): Maximum time to wait for elements to load.
-            retries (int): Number of retries allowed for each tile.
-
-        Returns:
-            dict: Dictionary containing property data.
-
-        Raises:
-            Exception: If processing fails after all retries.
-        """
+        """Process a single tile with retries."""
         attempt = 0
         while attempt < retries:
             try:
@@ -115,33 +244,24 @@ class CategoryPage(BasePage):
                 data = extract_property_info(tile, wait_time)
                 print(f"Successfully extracted tile info: {data}")
 
-                # Interact with the map icon
+                # Interact with map icon
                 if self.click_map_icon(tile):
                     print("Map icon interaction successful.")
                     self.wait_for_map_to_load()
                 else:
-                    print("Failed to interact with the map icon.")
+                    print("Failed to interact with map icon.")
 
                 return data
             except Exception as e:
                 print(f"Attempt {attempt + 1} failed for tile: {e}")
                 attempt += 1
-                time.sleep(2)  # Wait before retrying
+                time.sleep(2)
 
         raise Exception(f"Failed to process tile after {retries} attempts.")
 
     def click_map_icon(self, tile):
-        """
-        Clicks the map icon for a given tile and verifies the action.
-
-        Args:
-            tile (WebElement): The tile element.
-
-        Returns:
-            bool: True if the map icon was clicked successfully, False otherwise.
-        """
+        """Click the map icon for a tile."""
         try:
-            # Wait for the map icon to be present and interactable
             wait = WebDriverWait(tile, 10)
             map_icon = wait.until(
                 EC.presence_of_element_located(
@@ -156,12 +276,7 @@ class CategoryPage(BasePage):
             return False
 
     def wait_for_map_to_load(self, timeout=15):
-        """
-        Waits for the map section to load fully.
-
-        Args:
-            timeout (int): Maximum time to wait for the map section to load.
-        """
+        """Wait for map section to load."""
         try:
             wait = WebDriverWait(self.driver, timeout)
             wait.until(EC.presence_of_element_located((By.XPATH, self.locators['map_section'])))

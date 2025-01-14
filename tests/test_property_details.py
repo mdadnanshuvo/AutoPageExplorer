@@ -3,6 +3,7 @@ from selenium import webdriver
 from pages.category_page import CategoryPage
 from utils.url_helper import get_random_category_url  # Import the URL generator
 
+
 class TestCategoryPage(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
@@ -32,14 +33,38 @@ class TestCategoryPage(unittest.TestCase):
 
     def test_category_page_loads(self):
         """
-        Test to ensure the Category Page loads and property tiles are present.
+        Test to ensure the Category Page loads and all property tiles are fetched.
         """
         print(f"Testing with URL: {self.base_url}")  # Debugging output
 
-        # Verify if property tiles are present
-        property_tiles = self.category_page.get_property_tiles()
-        self.assertGreater(len(property_tiles), 0, "No property tiles found!")
-        print(f"Found {len(property_tiles)} property tiles.")  # Debugging output
+        # Get total tiles
+        total_tiles = self.category_page.get_total_tiles()
+        self.assertGreater(total_tiles, 0, "No property tiles found!")
+        print(f"Total tiles found: {total_tiles}")  # Debugging output
+
+        # Load all property tiles
+        property_tiles = self.category_page.get_all_property_tiles(total_tiles)
+        self.assertGreater(len(property_tiles), 0, "No property tiles loaded!")
+        print(f"Loaded {len(property_tiles)} property tiles.")  # Debugging output
+
+    def test_process_tiles_randomly_one_by_one(self):
+        """
+        Test processing tiles randomly one by one.
+        """
+        print(f"Testing with URL: {self.base_url}")  # Debugging output
+
+        # Get total tiles
+        total_tiles = self.category_page.get_total_tiles()
+        self.assertGreater(total_tiles, 0, "No property tiles found!")
+        print(f"Total tiles found: {total_tiles}")  # Debugging output
+
+        # Load all property tiles
+        property_tiles = self.category_page.get_all_property_tiles(total_tiles)
+        self.assertGreater(len(property_tiles), 0, "No property tiles loaded!")
+
+        # Process tiles one by one
+        self.category_page.process_tiles_randomly_one_by_one(property_tiles, count=5)
+        print("Successfully processed 5 tiles randomly one by one.")  # Debugging output
 
 
 if __name__ == "__main__":
