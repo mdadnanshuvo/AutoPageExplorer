@@ -3,16 +3,16 @@ from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 
 
-def extract_property_info(tile, wait_time=5):
+def extract_property_info(tile, wait_time=0.5):
     """
-    Extracts property information from a tile element, ensuring no missing values.
+    Extracts property information from a tile element.
 
     Args:
         tile (WebElement): The tile element.
         wait_time (int): Maximum time to wait for elements to load.
 
     Returns:
-        dict: A dictionary containing the property information, including the data-id.
+        dict: A dictionary containing the property information from the tile.
 
     Raises:
         Exception: If any required element is missing.
@@ -21,56 +21,58 @@ def extract_property_info(tile, wait_time=5):
     wait = WebDriverWait(tile, wait_time)
 
     try:
-        # Extract data-id directly from the tile element
-        info['data_id'] = tile.get_attribute('data-id')
-
-        # Use explicit class and ID locators
-        info['title'] = wait.until(
-            EC.presence_of_element_located(
-                (By.XPATH, './/*[@id[contains(., "details-btn-anchor")]]')
-            )
-        ).text
-
-        info['rating'] = wait.until(
-            EC.presence_of_element_located(
-                (By.XPATH, './/*[contains(@class, "review-general")]')
-            )
-        ).text
-
-        info['review'] = wait.until(
-            EC.presence_of_element_located(
-                (By.XPATH, './/*[contains(@class, "review-general")]')
-            )
-        ).text
-
-        info['number_of_reviews'] = wait.until(
-            EC.presence_of_element_located(
-                (By.XPATH, './/*[contains(@class, "number-of-review")]')
-            )
-        ).text
-
-        info['price'] = wait.until(
-            EC.presence_of_element_located(
-                (By.XPATH, './/*[contains(@class, "price-info") and contains(@class, "js-price-value")]')
-            )
-        ).text
-
+        # Extract property type
         info['property_type'] = wait.until(
             EC.presence_of_element_located(
                 (By.XPATH, './/*[contains(@class, "property-type") and contains(@class, "color-dark-light")]')
             )
         ).text
 
+        # Extract property title
+        info['title'] = wait.until(
+            EC.presence_of_element_located(
+                (By.XPATH, './/*[@id[contains(., "details-btn-anchor")]]')
+            )
+        ).text
+
+        # Extract rating and reviews using the rating-review class
+        rating_review_div = wait.until(
+            EC.presence_of_element_located(
+                (By.XPATH, './/div[contains(@class, "rating-review")]')
+            )
+        )
+
+        # Extract rating
+        try:
+            info['rating'] = rating_review_div.find_element(
+                By.XPATH, './/span[contains(@class, "review-general")]'
+            ).text
+        except Exception:
+            info['rating'] = "No Rating"
+
+        # Extract number of reviews
+        try:
+            info['number_of_reviews'] = rating_review_div.find_element(
+                By.XPATH, './/span[contains(@class, "number-of-review")]'
+            ).text
+        except Exception:
+            info['number_of_reviews'] = "No Reviews"
+
+        # Extract price
+        info['price'] = wait.until(
+            EC.presence_of_element_located(
+                (By.XPATH, './/*[contains(@class, "price-info") and contains(@class, "js-price-value")]')
+            )
+        ).text
+
     except Exception as e:
-        # Log error and re-raise to ensure issues are identified
-        print(f"Error extracting property info from tile (data-id: {info.get('data_id', 'unknown')}): {e}")
+        print(f"Error extracting property info from tile: {e}")
         raise
 
     return info
 
 
-
-def extract_map_info(driver, wait_time=5):
+def extract_map_info(driver, wait_time=0.5):
     """
     Extracts property information from the map section of the page.
 
@@ -88,31 +90,44 @@ def extract_map_info(driver, wait_time=5):
     wait = WebDriverWait(driver, wait_time)
 
     try:
-        # Mandatory fields from the map info window
+        # Extract property type
         map_info['property_type'] = wait.until(
             EC.presence_of_element_located(
                 (By.XPATH, './/div[contains(@class, "info-window-amenities")]')
             )
         ).text
 
+        # Extract property title
         map_info['title'] = wait.until(
             EC.presence_of_element_located(
                 (By.XPATH, './/a[contains(@class, "info-window-title")]')
             )
         ).text
 
-        map_info['rating'] = wait.until(
+        # Extract rating and reviews using the rating-review class
+        rating_review_div = wait.until(
             EC.presence_of_element_located(
-                (By.XPATH, './/span[contains(@class, "review-general")]')
+                (By.XPATH, './/div[contains(@class, "rating-review")]')
             )
-        ).text
+        )
 
-        map_info['number_of_reviews'] = wait.until(
-            EC.presence_of_element_located(
-                (By.XPATH, './/span[contains(@class, "number-of-reviews")]')
-            )
-        ).text
+        # Extract rating
+        try:
+            map_info['rating'] = rating_review_div.find_element(
+                By.XPATH, './/span[contains(@class, "review-general")]'
+            ).text
+        except Exception:
+            map_info['rating'] = "No Rating"
 
+        # Extract number of reviews
+        try:
+            map_info['number_of_reviews'] = rating_review_div.find_element(
+                By.XPATH, './/span[contains(@class, "number-of-review")]'
+            ).text
+        except Exception:
+            map_info['number_of_reviews'] = "No Reviews"
+
+        # Extract price
         map_info['price'] = wait.until(
             EC.presence_of_element_located(
                 (By.XPATH, './/span[contains(@class, "js-nearby-price-value")]')
@@ -120,7 +135,6 @@ def extract_map_info(driver, wait_time=5):
         ).text
 
     except Exception as e:
-        # Log error and re-raise
         print(f"Error extracting map info: {e}")
         raise
 

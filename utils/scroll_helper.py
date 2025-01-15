@@ -5,7 +5,7 @@ from selenium.webdriver.support import expected_conditions as EC
 import time
 
 
-def scroll_and_load(driver, tiles_xpath, total_tiles, container=None, center_tiles=False, initial_scroll_time=10):
+def scroll_and_load(driver, tiles_xpath, total_tiles, container=None, center_tiles=False, initial_scroll_time=1):
     """
     Dynamically scrolls and loads elements matching the provided XPath within a specific container,
     with an optional initial scrolling time and tile centralization.
@@ -25,7 +25,7 @@ def scroll_and_load(driver, tiles_xpath, total_tiles, container=None, center_til
     start_time = time.time()
     while time.time() - start_time < initial_scroll_time:
         driver.execute_script("window.scrollBy(0, window.innerHeight);")
-        time.sleep(2)  # Pause to simulate natural scrolling
+        time.sleep(1)  # Pause to simulate natural scrolling
 
     print("Initial scrolling completed. Starting tile loading...")
 

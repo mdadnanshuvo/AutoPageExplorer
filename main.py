@@ -94,10 +94,11 @@ def main():
         )
         print(f"Successfully scrolled through {len(scrolled_tiles)} tiles")
         
+        random_tiles = category_page.process_tiles_randomly_one_by_one(all_tiles)
         # Process tiles one by one
         print("\n=== Phase 3: Processing Individual Tiles ===")
         results = []
-        for tile in all_tiles:
+        for tile in random_tiles:
             try:
                 # Try to interact with map first
                 if category_page.click_map_icon(tile):
