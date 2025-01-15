@@ -2,7 +2,7 @@ from selenium.webdriver.common.by import By
 from selenium.webdriver.common.action_chains import ActionChains
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
-from utils.random_selector import select_random_elements
+from .details_page import process_hybrid_page
 from utils.extract_info import extract_map_info, extract_property_info
 from utils.scroll_helper import scroll_and_load
 from utils.page_data_utils import get_total_tiles_count
@@ -151,7 +151,7 @@ class CategoryPage(BasePage):
 
             try:
                 self.scroll_to_tile(tile)
-                time.sleep(5)
+                time.sleep(1)
 
                 try:
                     data = self.process_tile(tile, wait_time=3, retries=3)
@@ -164,7 +164,7 @@ class CategoryPage(BasePage):
                 except Exception as e:
                     print(f"Error processing tile {random_index}: {e}")
 
-                time.sleep(random.uniform(5.0, 5.0))
+                time.sleep(random.uniform(0.5, 1))
             except Exception as e:
                 print(f"Error with tile {random_index}: {e}")
                 continue
@@ -182,7 +182,7 @@ class CategoryPage(BasePage):
         except Exception as e:
             print(f"Error scrolling to tile: {e}")
 
-    def process_tile(self, tile, wait_time=2, retries=3):
+    def process_tile(self, tile, wait_time=1, retries=3):
         """
         Enhanced tile processing with comparison to map data and better error handling.
 
@@ -219,10 +219,18 @@ class CategoryPage(BasePage):
                         print(f"Comparison results: {comparison}")
                 except Exception as map_error:
                     print(f"Map interaction failed or map data extraction issue: {map_error}")
+                 # Navigate to and extract data from the hybrid page
+                hybrid_data = {}
+                try:
+                    hybrid_data = process_hybrid_page(self.driver, tile, wait_time)
+                    print(f"Successfully extracted hybrid page info: {hybrid_data}")
+                except Exception as hybrid_error:
+                    print(f"Hybrid page interaction failed or data extraction issue: {hybrid_error}")
 
                 return {
                     'tile_data': tile_data,
                     'map_data': map_data,
+                    'hybrid_data': hybrid_data,
                     'comparison': comparison
                 }
             except Exception as e:
