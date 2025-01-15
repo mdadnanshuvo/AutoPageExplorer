@@ -102,7 +102,8 @@ def main():
             try:
                 # Try to interact with map first
                 if category_page.click_map_icon(tile):
-                    category_page.wait_for_map_to_load()
+                    pass
+                    
                 
                 # Process the tile
                 result = category_page.process_tile(tile)

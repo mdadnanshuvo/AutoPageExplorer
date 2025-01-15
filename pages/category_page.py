@@ -24,7 +24,7 @@ class CategoryPage(BasePage):
             'tile_container': '//div[@id="js-tiles-container"]',
             'property_tile': './/div[contains(@class, "js-property-tile")]'
         }
-        self.wait = WebDriverWait(driver, 20)  # Default wait time of 20 seconds
+        self.wait = WebDriverWait(driver, 5)  # Default wait time of 20 seconds
 
     def navigate_to(self, url):
         """
@@ -92,7 +92,7 @@ class CategoryPage(BasePage):
         last_count = 0
         attempts = 0
         max_attempts = 30
-        scroll_pause_time = 3
+        scroll_pause_time = 1
 
         try:
             container = self.wait_for_tiles_container()
@@ -116,14 +116,14 @@ class CategoryPage(BasePage):
                 else:
                     last_count = len(loaded_tiles)
                     attempts = 0
-                    scroll_pause_time = 3
+                    scroll_pause_time = 1
 
                 print(f"Loaded {len(loaded_tiles)} of {total_tiles} tiles...")
 
-            time.sleep(5)
+            time.sleep(1)
             print(f"Finished loading tiles. Total loaded: {len(loaded_tiles)}")
             self.driver.execute_script("window.scrollTo({top: 0, behavior: 'smooth'});")
-            time.sleep(5)
+            time.sleep(1)
             return loaded_tiles
         except Exception as e:
             print(f"Error loading property tiles: {e}")
@@ -154,7 +154,7 @@ class CategoryPage(BasePage):
                 time.sleep(5)
 
                 try:
-                    data = self.process_tile(tile, wait_time=30, retries=3)
+                    data = self.process_tile(tile, wait_time=3, retries=3)
                     if data:
                         results.append({
                             'index': random_index,
@@ -176,13 +176,13 @@ class CategoryPage(BasePage):
         """
         try:
             self.driver.execute_script("arguments[0].scrollIntoView(true);", tile)
-            time.sleep(5)
+            time.sleep(1)
             self.driver.execute_script("window.scrollBy(0, -100);")
             time.sleep(1)
         except Exception as e:
             print(f"Error scrolling to tile: {e}")
 
-    def process_tile(self, tile, wait_time=5, retries=3):
+    def process_tile(self, tile, wait_time=2, retries=3):
         """
         Enhanced tile processing with comparison to map data and better error handling.
 
@@ -212,7 +212,7 @@ class CategoryPage(BasePage):
                 try:
                     if self.click_map_icon(tile):
                         self.wait_for_map_to_load()
-                        time.sleep(2)
+                        time.sleep(0.5)
                         map_data = extract_map_info(self.driver, wait_time)
                         print(f"Successfully extracted map info: {map_data}")
                         
@@ -229,9 +229,9 @@ class CategoryPage(BasePage):
                 print(f"Attempt {attempt + 1} failed for tile: {e}")
                 attempt += 1
                 if attempt < retries:
-                    time.sleep(5)
+                    time.sleep(3)
                     self.scroll_to_tile(tile)
-                    time.sleep(5)
+                    time.sleep(3)
         raise Exception(f"Failed to process tile after {retries} attempts.")
 
     def click_map_icon(self, tile):
@@ -306,7 +306,7 @@ class CategoryPage(BasePage):
                         "arguments[0].scrollIntoView({block: 'center'});",
                         tile
                     )
-                time.sleep(0.5 if smooth else 1)
+                time.sleep(0.2 if smooth else 0.5)
                 self.driver.execute_script("window.scrollBy(0, -100);")
                 time.sleep(1)
 
@@ -316,7 +316,7 @@ class CategoryPage(BasePage):
                 else:
                     print(f"Tile {index} not visible after scroll")
 
-                time.sleep(random.uniform(2.0, 4.0))
+                time.sleep(random.uniform(0.2, 0.5))
             except Exception as e:
                 print(f"Error scrolling to tile {index}: {e}")
                 continue
