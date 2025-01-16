@@ -1,3 +1,4 @@
+import re
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
@@ -64,11 +65,11 @@ def extract_property_info(tile, wait_time=0.5):
             raise Exception("Unable to extract rating and review details.")
 
         # Extract price
-        info['price'] = wait.until(
-            EC.presence_of_element_located(
-                (By.XPATH, './/*[contains(@class, "price-info") and contains(@class, "js-price-value")]')
-            )
-        ).text
+        price_text = wait.until(EC.presence_of_element_located((By.XPATH, './/*[contains(@class, "price-info") and contains(@class, "js-price-value")]'))).text
+        price = re.search(r'\d[\d,]*', price_text.replace('From ', '')).group().replace(",", "")
+        info['price'] = price
+
+
 
     except Exception as e:
         print(f"Error extracting property info from tile: {e}")
