@@ -64,10 +64,14 @@ def extract_property_info(tile, wait_time=0.5):
         else:
             raise Exception("Unable to extract rating and review details.")
 
+        
         # Extract price
         price_text = wait.until(EC.presence_of_element_located((By.XPATH, './/*[contains(@class, "price-info") and contains(@class, "js-price-value")]'))).text
-        price = re.search(r'\d[\d,]*', price_text.replace('From ', '')).group().replace(",", "")
+        price = price_text.split(' ', 1)[1]  # This removes the first word and keeps the rest
+
+        # Store the price
         info['price'] = price
+
 
 
 
