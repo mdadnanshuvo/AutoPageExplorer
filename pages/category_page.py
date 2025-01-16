@@ -182,7 +182,7 @@ class CategoryPage(BasePage):
         except Exception as e:
             print(f"Error scrolling to tile: {e}")
 
-    def process_tile(self, tile, wait_time=1, retries=3):
+    def process_tile(self, tile, wait_time=3, retries=3):
         """
         Enhanced tile processing with comparison to map data and better error handling.
 

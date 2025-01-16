@@ -55,16 +55,27 @@ def process_hybrid_page(driver, tile, wait_time=10):
         else:
             raise Exception(f"Unexpected format for availability title: {availability_title}")
 
-        # Extract rating and reviews
+        # Extract rating and reviews dynamically
         rating_review = wait.until(
             EC.presence_of_element_located((By.XPATH, '//span[contains(@class, "rating-review")]'))
         )
-        hybrid_data['rating'] = rating_review.find_element(
-            By.XPATH, './/strong[contains(@class, "review-score")]'
-        ).text
-        hybrid_data['number_of_reviews'] = rating_review.find_element(
-            By.XPATH, './/span[contains(@class, "number-of-reviews")]'
-        ).text
+        if rating_review.find_elements(By.XPATH, './/strong[contains(@class, "review-score")]'):
+            # Case: Standard rating and reviews
+            hybrid_data['rating'] = rating_review.find_element(
+                By.XPATH, './/strong[contains(@class, "review-score")]'
+            ).text
+            hybrid_data['number_of_reviews'] = rating_review.find_element(
+                By.XPATH, './/span[contains(@class, "number-of-reviews")]'
+            ).text
+        elif rating_review.find_elements(By.XPATH, './/span[contains(@class, "text-bold new-text")]'):
+            # Case: New listing, no reviews
+            hybrid_data['rating'] = "New"
+            hybrid_data['number_of_reviews'] = rating_review.find_element(
+                By.XPATH, './/span[contains(@class, "text-bold new-text")]'
+            ).text
+        else:
+            # Raise an exception if no matching structure is found
+            raise Exception("Unable to extract rating and review details from the hybrid page.")
 
         # Extract price
         hybrid_data['price'] = wait.until(
