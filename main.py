@@ -78,7 +78,7 @@ def main():
         print(f"Initial tile count: {total_tiles}")
         
         # Load all tiles
-        print("\n=== Phase 1: Loading All Tiles ===")
+       
         all_tiles = category_page.load_all_property_tiles(total_tiles)
         print(f"Loaded {len(all_tiles)} tiles")
         

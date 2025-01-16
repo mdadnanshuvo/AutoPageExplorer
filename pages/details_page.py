@@ -3,6 +3,7 @@ from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.common.action_chains import ActionChains
 
+
 def process_hybrid_page(driver, tile, wait_time=10):
     """
     Interact with the hybrid page by clicking the title link, fetching data,
@@ -15,6 +16,9 @@ def process_hybrid_page(driver, tile, wait_time=10):
 
     Returns:
         dict: Data fetched from the hybrid page.
+
+    Raises:
+        Exception: If any required element is missing or unavailable.
     """
     original_window = driver.current_window_handle
 
@@ -34,7 +38,6 @@ def process_hybrid_page(driver, tile, wait_time=10):
 
         # Extract data from the hybrid page
         hybrid_data = {}
-
         wait = WebDriverWait(driver, wait_time)
 
         # Extract property title
@@ -42,10 +45,15 @@ def process_hybrid_page(driver, tile, wait_time=10):
             EC.presence_of_element_located((By.XPATH, '//h1[contains(@class, "js-ai-content-property-name")]'))
         ).text
 
-        # Extract property type
-        hybrid_data['property_type'] = wait.until(
-            EC.presence_of_element_located((By.XPATH, '//span[contains(@class, "js-property-type")]'))
-        ).text
+        # Extract property type from the availability title
+        availability_title = wait.until(
+            EC.presence_of_element_located((By.XPATH, '//div[contains(@class, "availability-title")]'))
+        ).text.strip()
+        words = availability_title.split()
+        if len(words) >= 3 and words[0].lower() == "check" and words[2].lower() == "availability":
+            hybrid_data['property_type'] = words[1]
+        else:
+            raise Exception(f"Unexpected format for availability title: {availability_title}")
 
         # Extract rating and reviews
         rating_review = wait.until(
@@ -60,7 +68,7 @@ def process_hybrid_page(driver, tile, wait_time=10):
 
         # Extract price
         hybrid_data['price'] = wait.until(
-            EC.presence_of_element_located((By.XPATH, '//span[@id="js-price-per-night"]'))
+            EC.presence_of_element_located((By.XPATH, '//div[@class="availability-price" and @id="js-default-price"]//span/strong'))
         ).text
 
         print(f"Data extracted from the hybrid page: {hybrid_data}")
@@ -74,4 +82,5 @@ def process_hybrid_page(driver, tile, wait_time=10):
 
     except Exception as e:
         print(f"Error interacting with the hybrid page: {e}")
+        driver.switch_to.window(original_window)  # Ensure we always return to the original window
         raise

@@ -9,7 +9,7 @@ def extract_property_info(tile, wait_time=0.5):
 
     Args:
         tile (WebElement): The tile element.
-        wait_time (int): Maximum time to wait for elements to load.
+        wait_time (float): Maximum time to wait for elements to load.
 
     Returns:
         dict: A dictionary containing the property information from the tile.
@@ -43,20 +43,14 @@ def extract_property_info(tile, wait_time=0.5):
         )
 
         # Extract rating
-        try:
-            info['rating'] = rating_review_div.find_element(
-                By.XPATH, './/span[contains(@class, "review-general")]'
-            ).text
-        except Exception:
-            info['rating'] = "New"
+        info['rating'] = rating_review_div.find_element(
+            By.XPATH, './/span[contains(@class, "review-general")]'
+        ).text
 
         # Extract number of reviews
-        try:
-            info['number_of_reviews'] = rating_review_div.find_element(
-                By.XPATH, './/span[contains(@class, "number-of-review")]'
-            ).text
-        except Exception:
-            info['number_of_reviews'] = "None"
+        info['number_of_reviews'] = rating_review_div.find_element(
+            By.XPATH, './/span[contains(@class, "number-of-review")]'
+        ).text
 
         # Extract price
         info['price'] = wait.until(
@@ -112,20 +106,14 @@ def extract_map_info(driver, wait_time=5):
         )
 
         # Extract rating
-        try:
-            map_info['rating'] = review_ratings_div.find_element(
-                By.XPATH, './/span[contains(@class, "review-general")]'
-            ).text
-        except Exception:
-            map_info['rating'] = "New"
+        map_info['rating'] = review_ratings_div.find_element(
+            By.XPATH, './/span[contains(@class, "review-general")]'
+        ).text
 
         # Extract number of reviews
-        try:
-            map_info['number_of_reviews'] = review_ratings_div.find_element(
-                By.XPATH, './/span[contains(@class, "number-of-reviews")]'
-            ).text
-        except Exception:
-            map_info['number_of_reviews'] = "None"
+        map_info['number_of_reviews'] = review_ratings_div.find_element(
+            By.XPATH, './/span[contains(@class, "number-of-reviews")]'
+        ).text
 
         # Extract price
         map_info['price'] = wait.until(
