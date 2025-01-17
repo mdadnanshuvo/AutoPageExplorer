@@ -3,15 +3,14 @@ from selenium.webdriver.common.action_chains import ActionChains
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 from .details_page import process_hybrid_page
-from utils.extract_info import extract_map_info, extract_property_info
-from utils.scroll_helper import scroll_and_load
-from utils.page_data_utils import get_total_tiles_count
-from utils.url_helper import get_random_category_url
-from utils.page_checker import is_category_page
+from utils.utility_func import extract_map_info, extract_property_info
+from utils.utility_func import get_total_tiles_count
+from utils.utility_func import get_random_category_url
+from utils.utility_func import is_category_page
 from .base_page import BasePage
 import time
 import random
-from utils.compare_and_excel import generate_comparison_report
+from utils.utility_func import generate_comparison_report
 
 
 
@@ -27,7 +26,7 @@ class CategoryPage(BasePage):
             'tile_container': '//div[@id="js-tiles-container"]',
             'property_tile': './/div[contains(@class, "js-property-tile")]'
         }
-        self.wait = WebDriverWait(driver, 2)  # Default wait time of 20 seconds
+        self.wait = WebDriverWait(driver, 5)  # Default wait time of 20 seconds
 
     def navigate_to(self, url):
         """
@@ -132,7 +131,7 @@ class CategoryPage(BasePage):
             print(f"Error loading property tiles: {e}")
             return []
 
-    def process_tiles_randomly_one_by_one(self, all_tiles, url, count=1):
+    def process_tiles_randomly_one_by_one(self, all_tiles, url, count=10):
         """
         Process random tiles with improved visibility handling.
         """
@@ -204,7 +203,6 @@ class CategoryPage(BasePage):
         while attempt < retries:
             try:
                 wait = WebDriverWait(self.driver, wait_time)
-                wait.until(lambda d: tile.is_displayed())
                 tile_data = extract_property_info(tile, wait_time)
                 if not tile_data:
                     raise Exception("No data extracted from tile")
@@ -235,7 +233,6 @@ class CategoryPage(BasePage):
                     'tile_data': tile_data,
                     'map_data': map_data,
                     'hybrid_data': hybrid_data,
-                   
                 }
             
             
@@ -324,11 +321,7 @@ class CategoryPage(BasePage):
                 self.driver.execute_script("window.scrollBy(0, -100);")
                 time.sleep(0.1)
 
-                if tile.is_displayed():
-                    scrolled_tiles.append(index)
-                    print(f"Successfully scrolled to tile {index}")
-                else:
-                    print(f"Tile {index} not visible after scroll")
+                
 
                 time.sleep(random.uniform(0.2, 0.5))
             except Exception as e:

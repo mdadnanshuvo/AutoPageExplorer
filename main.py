@@ -25,7 +25,7 @@ def setup_driver():
     return driver
 
 
-def generate_scroll_sequence(total_tiles, num_scrolls=5):
+def generate_scroll_sequence(total_tiles, num_scrolls=10):
     """
     Generate a sequence of tile indices to scroll to.
     
@@ -79,7 +79,6 @@ def main():
         print(f"Initial tile count: {total_tiles}")
         
         # Load all tiles
-       
         all_tiles = category_page.load_all_property_tiles(total_tiles)
         print(f"Loaded {len(all_tiles)} tiles")
         
@@ -123,21 +122,20 @@ def main():
     except KeyboardInterrupt:
         print("\nOperation interrupted by user")
         
-    except Exception as e:
-        print(f"\nCritical error occurred: {str(e)}")
-        import traceback
-        print("\nFull error traceback:")
-        traceback.print_exc()
+    
+        
         
     finally:
         if driver:
+
             try:
+                 # Close all tabs/windows
                 driver.quit()
-                print("\nBrowser closed successfully")
+                print("\nAll browser windows closed successfully")
             except Exception as e:
-                print(f"\nError closing browser: {str(e)}")
+               pass
         
-        print("\n=== Processing Complete ===")
+    print("\n=== Processing Complete ===")
 
 
 if __name__ == "__main__":
