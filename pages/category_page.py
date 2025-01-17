@@ -230,7 +230,7 @@ class CategoryPage(BasePage):
                 except Exception as hybrid_error:
                     print(f"Hybrid page interaction failed or data extraction issue: {hybrid_error}")
                 
-                generate_comparison_report("varoom.com",url,"Category","Test for data consistency",tile_data,map_data,hybrid_data)
+                generate_comparison_report(tile_data,map_data,hybrid_data,url)
                 return {
                     'tile_data': tile_data,
                     'map_data': map_data,

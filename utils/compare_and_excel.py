@@ -1,57 +1,56 @@
+import os
 import pandas as pd
 
-def generate_comparison_report(domain, url, page, test_case, tile_data, map_data, hybrid_data):
+def generate_comparison_report( tile_data, map_data, hybrid_data, url, domain = "www.varoom.com",page = "Category", test_case = "Test for data consistency"):
     """
-    Compares data from three dictionaries and generates an Excel report with the results.
+    Generates an Excel report verifying the consistency of property details.
 
-    Parameters:
+    Args:
         domain (str): Domain name (e.g., "https://www.varoom.com/").
         url (str): Category page URL.
         page (str): Page name (e.g., "Category").
-        test_case (str): Formal test case name.
-        tile_data (dict): First data source.
-        map_data (dict): Second data source.
-        hybrid_data (dict): Third data source.
+        test_case (str): Test case description.
+        tile_data (dict): Data from the property tile.
+        map_data (dict): Data from the map info window.
+        hybrid_data (dict): Data from the details page.
 
     Returns:
-        None. Saves an Excel file named 'comparison_report.xlsx'.
+        None. Saves an Excel report in the `data` folder with `test_reports.xlsx` as the file name.
     """
-    # Prepare the comparison results
-    comparison_results = []
+    # Ensure the 'data' directory exists
+    output_dir = "data"
+    os.makedirs(output_dir, exist_ok=True)
 
-    # Ensure keys are consistent across all dictionaries
-    keys = set(tile_data.keys()).union(map_data.keys()).union(hybrid_data.keys())
+    # File path for the report
+    output_file = os.path.join(output_dir, "test_reports.xlsx")
 
-    for key in keys:
-        tile_value = tile_data.get(key, None)
-        map_value = map_data.get(key, None)
-        hybrid_value = hybrid_data.get(key, None)
+    # Check consistency
+    passed = tile_data == map_data == hybrid_data
 
-        passed = tile_value == map_value == hybrid_value
+    # Format comments with detailed comparison
+    comments = {
+        "tile_info": tile_data,
+        "map_info_window": map_data,
+        "details_info": hybrid_data,
+    }
 
-        comparison_results.append({
-            "Key": key,
-            "Tile Info": tile_value,
-            "Map Info": map_value,
-            "Details Info": hybrid_value,
-            "Passed": passed
-        })
+    # Create report data
+    report_data = [{
+        "Key": tile_data.get("_id", "N/A"),  # Assuming "_id" is in tile_data
+        "URL": url,
+        "Page": page,
+        "Test Case": test_case,
+        "Passed": passed,
+        "Comments": str(comments)  # Convert dictionary to string for readability
+    }]
 
-    # Convert to DataFrame
-    df = pd.DataFrame(comparison_results)
+    # Load existing report or create new
+    try:
+        existing_df = pd.read_excel(output_file)
+        df = pd.concat([existing_df, pd.DataFrame(report_data)], ignore_index=True)
+    except FileNotFoundError:
+        df = pd.DataFrame(report_data)
 
-    # Add metadata columns
-    df.insert(0, "Domain", domain)
-    df.insert(1, "URL", url)
-    df.insert(2, "Page", page)
-    df.insert(3, "Test Case", test_case)
-
-    # Save to Excel
-    output_file = "comparison_report.xlsx"
+    # Save updated report
     df.to_excel(output_file, index=False)
-
-    print(f"Comparison report saved to {output_file}")
-
-
-
-
+    print(f"Comparison report updated in {output_file}")
