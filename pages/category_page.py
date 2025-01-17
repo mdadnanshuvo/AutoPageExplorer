@@ -11,11 +11,14 @@ from utils.page_checker import is_category_page
 from .base_page import BasePage
 import time
 import random
-from utils.compare_tile_and_map_data import compare_tile_and_map_data
+from utils.compare_and_excel import generate_comparison_report
+
 
 
 class CategoryPage(BasePage):
     def __init__(self, driver):
+        
+
         super().__init__(driver)
         self.locators = {
             'property_tiles': '//div[contains(@class, "js-tiles-container")]',
@@ -24,7 +27,7 @@ class CategoryPage(BasePage):
             'tile_container': '//div[@id="js-tiles-container"]',
             'property_tile': './/div[contains(@class, "js-property-tile")]'
         }
-        self.wait = WebDriverWait(driver, 5)  # Default wait time of 20 seconds
+        self.wait = WebDriverWait(driver, 2)  # Default wait time of 20 seconds
 
     def navigate_to(self, url):
         """
@@ -35,7 +38,7 @@ class CategoryPage(BasePage):
             self.wait.until(
                 lambda driver: driver.execute_script('return document.readyState') == 'complete'
             )
-            time.sleep(2)  # Additional wait for any dynamic content
+            time.sleep(1)  # Additional wait for any dynamic content
         except Exception as e:
             print(f"Error navigating to {url}: {e}")
             raise
@@ -92,7 +95,7 @@ class CategoryPage(BasePage):
         last_count = 0
         attempts = 0
         max_attempts = 30
-        scroll_pause_time = 1
+        scroll_pause_time = 0
 
         try:
             container = self.wait_for_tiles_container()
@@ -112,24 +115,24 @@ class CategoryPage(BasePage):
 
                 if len(loaded_tiles) == last_count:
                     attempts += 1
-                    scroll_pause_time += 0.5
+                    scroll_pause_time += 0
                 else:
                     last_count = len(loaded_tiles)
                     attempts = 0
-                    scroll_pause_time = 1
+                    scroll_pause_time = 0.3
 
                 print(f"Loaded {len(loaded_tiles)} of {total_tiles} tiles...")
 
-            time.sleep(1)
+           
             print(f"Finished loading tiles. Total loaded: {len(loaded_tiles)}")
             self.driver.execute_script("window.scrollTo({top: 0, behavior: 'smooth'});")
-            time.sleep(1)
+            time.sleep(0.3)
             return loaded_tiles
         except Exception as e:
             print(f"Error loading property tiles: {e}")
             return []
 
-    def process_tiles_randomly_one_by_one(self, all_tiles, count=10):
+    def process_tiles_randomly_one_by_one(self, all_tiles, url, count=1):
         """
         Process random tiles with improved visibility handling.
         """
@@ -154,7 +157,7 @@ class CategoryPage(BasePage):
                 time.sleep(1)
 
                 try:
-                    data = self.process_tile(tile, wait_time=3, retries=3)
+                    data = self.process_tile(tile, url, wait_time=1, retries=3)
                     if data:
                         results.append({
                             'index': random_index,
@@ -176,13 +179,13 @@ class CategoryPage(BasePage):
         """
         try:
             self.driver.execute_script("arguments[0].scrollIntoView(true);", tile)
-            time.sleep(1)
+            
             self.driver.execute_script("window.scrollBy(0, -100);")
             time.sleep(1)
         except Exception as e:
             print(f"Error scrolling to tile: {e}")
 
-    def process_tile(self, tile, wait_time=3, retries=3):
+    def process_tile(self, tile, url, wait_time=1, retries=3):
         """
         Enhanced tile processing with comparison to map data and better error handling.
 
@@ -207,7 +210,7 @@ class CategoryPage(BasePage):
                     raise Exception("No data extracted from tile")
                 print(f"Successfully extracted tile info: {tile_data}")
                 map_data = {}
-                comparison = {}
+               
 
                 try:
                     if self.click_map_icon(tile):
@@ -216,7 +219,7 @@ class CategoryPage(BasePage):
                         map_data = extract_map_info(self.driver, wait_time)
                         print(f"Successfully extracted map info: {map_data}")
                         
-                        print(f"Comparison results: {comparison}")
+                        
                 except Exception as map_error:
                     print(f"Map interaction failed or map data extraction issue: {map_error}")
                  # Navigate to and extract data from the hybrid page
@@ -226,13 +229,16 @@ class CategoryPage(BasePage):
                     print(f"Successfully extracted hybrid page info: {hybrid_data}")
                 except Exception as hybrid_error:
                     print(f"Hybrid page interaction failed or data extraction issue: {hybrid_error}")
-
+                
+                generate_comparison_report("varoom.com",url,"Category","Test for data consistency",tile_data,map_data,hybrid_data)
                 return {
                     'tile_data': tile_data,
                     'map_data': map_data,
                     'hybrid_data': hybrid_data,
-                    'comparison': comparison
+                   
                 }
+            
+            
             except Exception as e:
                 print(f"Attempt {attempt + 1} failed for tile: {e}")
                 attempt += 1
@@ -255,7 +261,7 @@ class CategoryPage(BasePage):
             ]
             for selector in selectors:
                 try:
-                    wait = WebDriverWait(tile, 5)
+                    wait = WebDriverWait(tile, 1)
                     map_icon = wait.until(
                         EC.presence_of_element_located((By.XPATH, selector))
                     )
@@ -269,7 +275,7 @@ class CategoryPage(BasePage):
             print(f"Error clicking map icon: {e}")
             return False
 
-    def wait_for_map_to_load(self, timeout=15):
+    def wait_for_map_to_load(self, timeout=0.5):
         """
         More flexible map loading check.
         """
@@ -316,7 +322,7 @@ class CategoryPage(BasePage):
                     )
                 time.sleep(0.2 if smooth else 0.5)
                 self.driver.execute_script("window.scrollBy(0, -100);")
-                time.sleep(1)
+                time.sleep(0.1)
 
                 if tile.is_displayed():
                     scrolled_tiles.append(index)

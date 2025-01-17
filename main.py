@@ -25,7 +25,7 @@ def setup_driver():
     return driver
 
 
-def generate_scroll_sequence(total_tiles, num_scrolls=20):
+def generate_scroll_sequence(total_tiles, num_scrolls=5):
     """
     Generate a sequence of tile indices to scroll to.
     
@@ -61,6 +61,7 @@ def main():
     driver = None
     start_time = time.time()
     
+    
     try:
         print("\n=== Starting Property Tile Processing ===")
         
@@ -72,7 +73,7 @@ def main():
         category_page = CategoryPage(driver)
         valid_url = category_page.navigate_to_valid_category_page()
         print(f"\nNavigated to valid category page: {valid_url}")
-        
+
         # Get initial tile count
         total_tiles = category_page.get_total_tiles()
         print(f"Initial tile count: {total_tiles}")
@@ -94,7 +95,7 @@ def main():
         )
         print(f"Successfully scrolled through {len(scrolled_tiles)} tiles")
         
-        random_tiles = category_page.process_tiles_randomly_one_by_one(all_tiles)
+        random_tiles = category_page.process_tiles_randomly_one_by_one(all_tiles, valid_url)
         # Process tiles one by one
         print("\n=== Phase 3: Processing Individual Tiles ===")
         results = []
@@ -106,13 +107,14 @@ def main():
                     
                 
                 # Process the tile
-                result = category_page.process_tile(tile)
+                result = category_page.process_tile(tile, valid_url)
                 results.append(result)
                 print("Successfully processed tile")
                 
             except Exception as e:
                 print(f"Error processing tile: {e}")
         
+       
         # Print processing summary
         print("\n=== Processing Summary ===")
         print(f"Total tiles processed: {len(results)}")

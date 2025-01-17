@@ -25,7 +25,7 @@ def scroll_and_load(driver, tiles_xpath, total_tiles, container=None, center_til
     start_time = time.time()
     while time.time() - start_time < initial_scroll_time:
         driver.execute_script("window.scrollBy(0, window.innerHeight);")
-        time.sleep(1)  # Pause to simulate natural scrolling
+        
 
     print("Initial scrolling completed. Starting tile loading...")
 
