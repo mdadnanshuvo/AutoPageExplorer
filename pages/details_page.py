@@ -40,10 +40,11 @@ def process_hybrid_page(driver, tile, wait_time=10):
         hybrid_data = {}
         wait = WebDriverWait(driver, wait_time)
 
-        # Extract property title
+       # Extract property title and keep only the part before '|'
         hybrid_data['title'] = wait.until(
-            EC.presence_of_element_located((By.XPATH, '//h1[contains(@class, "js-ai-content-property-name")]'))
-        ).text
+        EC.presence_of_element_located((By.XPATH, '//h1[contains(@class, "js-ai-content-property-name")]'))
+        ).text.split('|')[0].strip()
+
 
         # Extract property type from the availability title
         availability_title = wait.until(
