@@ -18,7 +18,7 @@
 
 1. **Clone the repository**:
    ```bash
-   https://github.com/mdadnanshuvo/AutoPageExplorer.git
+   git clone https://github.com/mdadnanshuvo/AutoPageExplorer.git
    ```
 2. **navigate to the repository**:
    ```
