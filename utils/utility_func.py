@@ -12,6 +12,7 @@ from selenium.webdriver.support import expected_conditions as EC
 import time
 from faker import Faker
 
+
 def get_random_category_url(base_url="https://www.varoom.com/all/"):
     """
     Generates a random category URL by appending a random country to the base URL.
@@ -23,7 +24,8 @@ def get_random_category_url(base_url="https://www.varoom.com/all/"):
         str: A complete category page URL with a random country.
     """
     faker = Faker()
-    country = faker.country().replace(" ", "-").lower()  # Replace spaces with dashes for URL compatibility
+    # Replace spaces with dashes for URL compatibility
+    country = faker.country().replace(" ", "-").lower()
     return f"{base_url}{country}"
 
 
@@ -47,7 +49,6 @@ def scroll_and_load(driver, tiles_xpath, total_tiles, container=None, center_til
     start_time = time.time()
     while time.time() - start_time < initial_scroll_time:
         driver.execute_script("window.scrollBy(0, window.innerHeight);")
-        
 
     print("Initial scrolling completed. Starting tile loading...")
 
@@ -57,11 +58,13 @@ def scroll_and_load(driver, tiles_xpath, total_tiles, container=None, center_til
     max_scroll_attempts = 20  # Adjust as necessary
 
     # Use container if provided, otherwise scroll the document body
-    scroll_target = container if container else driver.find_element(By.TAG_NAME, "body")
+    scroll_target = container if container else driver.find_element(
+        By.TAG_NAME, "body")
 
     while len(loaded_tiles) < total_tiles and scroll_attempts < max_scroll_attempts:
         loaded_tiles = driver.find_elements(By.XPATH, tiles_xpath)
-        driver.execute_script("arguments[0].scrollTop = arguments[0].scrollHeight;", scroll_target)
+        driver.execute_script(
+            "arguments[0].scrollTop = arguments[0].scrollHeight;", scroll_target)
         time.sleep(0.5)  # Allow time for loading
         scroll_attempts += 1
 
@@ -71,7 +74,8 @@ def scroll_and_load(driver, tiles_xpath, total_tiles, container=None, center_til
     if center_tiles:
         for tile in loaded_tiles:
             try:
-                driver.execute_script("arguments[0].scrollIntoView({block: 'center', inline: 'center'});", tile)
+                driver.execute_script(
+                    "arguments[0].scrollIntoView({block: 'center', inline: 'center'});", tile)
                 time.sleep(0.5)  # Allow smooth scrolling
                 print("Tile centered.")
             except Exception as e:
@@ -96,7 +100,6 @@ def select_random_elements(elements, count=10):
     return random.sample(elements, count)
 
 
-
 def get_total_tiles_count(driver):
     """
     Retrieve the total number of tiles using ScriptData.pageData.Items.length.
@@ -108,7 +111,8 @@ def get_total_tiles_count(driver):
         int: Total number of tiles on the page.
     """
     try:
-        total_tiles = driver.execute_script("return ScriptData.pageData.Items.length;")
+        total_tiles = driver.execute_script(
+            "return ScriptData.pageData.Items.length;")
         print(f"Total tiles found: {total_tiles}")
         return total_tiles
     except Exception as e:
@@ -136,7 +140,6 @@ def is_category_page(driver):
         return False
 
 
-
 def extract_property_info(tile, wait_time=0.5):
     """
     Extracts property information from a tile element.
@@ -151,6 +154,7 @@ def extract_property_info(tile, wait_time=0.5):
     Raises:
         Exception: If any required element is missing.
     """
+    paths = xpaths_for_category()
     info = {}
     wait = WebDriverWait(tile, wait_time)
 
@@ -158,54 +162,59 @@ def extract_property_info(tile, wait_time=0.5):
         # Extract property type
         info['property_type'] = wait.until(
             EC.presence_of_element_located(
-                (By.XPATH, './/*[contains(@class, "property-type") and contains(@class, "color-dark-light")]')
+                (By.XPATH,
+                 paths['property_type'])
             )
         ).text
 
         # Extract property title
         info['title'] = wait.until(
             EC.presence_of_element_located(
-                (By.XPATH, './/*[@id[contains(., "details-btn-anchor")]]')
+                (By.XPATH, paths['property_title'])
             )
         ).text
 
         # Extract rating and reviews
         rating_review_div = wait.until(
             EC.presence_of_element_located(
-                (By.XPATH, './/div[contains(@class, "rating-review")]')
+                (By.XPATH, paths['rating_review_div'])
             )
         )
 
         # Handle dynamic rating and review structures
-        if rating_review_div.find_elements(By.XPATH, './/span[contains(@class, "review-general")]'):
+        if rating_review_div.find_elements(By.XPATH, paths['review_general']):
             # Case 1: Standard rating and reviews
-            info['rating'] = rating_review_div.find_element(By.XPATH, './/span[contains(@class, "review-general")]').text
-            info['number_of_reviews'] = rating_review_div.find_element(By.XPATH, './/span[contains(@class, "number-of-review")]').text
+            info['rating'] = rating_review_div.find_element(
+                By.XPATH, paths['review_general']).text
+            info['number_of_reviews'] = rating_review_div.find_element(
+                By.XPATH, paths['number_of_reviews']).text
 
-        elif rating_review_div.find_elements(By.XPATH, './/div[contains(@class, "ratings")]'):
+        elif rating_review_div.find_elements(By.XPATH, paths['star_ratings']):
             # Case 2: Star-based ratings with a divider
-            star_rating = rating_review_div.find_element(By.XPATH, './/div[contains(@class, "ratings")]').get_attribute('class')
-            info['rating'] = star_rating.split('star-icons-')[-1]  # Extract the number of stars
-            info['number_of_reviews'] = rating_review_div.find_element(By.XPATH, './/span[contains(@class, "number-of-review")]').text
+            star_rating = rating_review_div.find_element(
+                By.XPATH, paths['star_ratings']).get_attribute('class')
+            info['rating'] = star_rating.split(
+                'star-icons-')[-1]  # Extract the number of stars
+            info['number_of_reviews'] = rating_review_div.find_element(
+                By.XPATH, paths['number_of_reviews']).text
 
-        elif rating_review_div.find_elements(By.XPATH, './/span[contains(@class, "number-of-review")]'):
+        elif rating_review_div.find_elements(By.XPATH, paths['number_of_reviews']):
             # Case 3: New or no rating, only reviews
             info['rating'] = "New"
-            info['number_of_reviews'] = rating_review_div.find_element(By.XPATH, './/span[contains(@class, "number-of-review")]').text
+            info['number_of_reviews'] = rating_review_div.find_element(
+                By.XPATH, paths['number_of_reviews']).text
 
         else:
             raise Exception("Unable to extract rating and review details.")
 
-        
         # Extract price
-        price_text = wait.until(EC.presence_of_element_located((By.XPATH, './/*[contains(@class, "price-info") and contains(@class, "js-price-value")]'))).text
-        price = price_text.split(' ', 1)[1]  # This removes the first word and keeps the rest
+        price_text = wait.until(EC.presence_of_element_located(
+            (By.XPATH, paths['price_info']))).text
+        # This removes the first word and keeps the rest
+        price = price_text.split(' ', 1)[1]
 
         # Store the price
         info['price'] = price
-
-
-
 
     except Exception as e:
         print(f"Error extracting property info from tile: {e}")
@@ -228,6 +237,7 @@ def extract_map_info(driver, wait_time=5):
     Raises:
         Exception: If any required element is missing.
     """
+    paths = xpaths_for_category()
     map_info = {}
     wait = WebDriverWait(driver, wait_time)
 
@@ -235,47 +245,50 @@ def extract_map_info(driver, wait_time=5):
         # Extract property type
         map_info['property_type'] = wait.until(
             EC.presence_of_element_located(
-                (By.XPATH, './/div[contains(@class, "info-window-amenities")]')
+                (By.XPATH, paths['map_property_type'])
             )
         ).text
 
         # Extract property title
         map_info['title'] = wait.until(
             EC.presence_of_element_located(
-                (By.XPATH, './/a[contains(@class, "info-window-title")]')
+                (By.XPATH, paths['map_property_title'])
             )
         ).text
 
         # Extract rating and reviews dynamically
         review_ratings_div = wait.until(
             EC.presence_of_element_located(
-                (By.XPATH, './/div[contains(@class, "info-window-review-ratings")]')
+                (By.XPATH,
+                 paths['map_review_ratings_div'])
             )
         )
 
         # Handle different structures of rating and reviews
-        if review_ratings_div.find_elements(By.XPATH, './/span[contains(@class, "review-general")]'):
+        if review_ratings_div.find_elements(By.XPATH, paths['map_review_general']):
             # Case: Standard rating and reviews
             map_info['rating'] = review_ratings_div.find_element(
-                By.XPATH, './/span[contains(@class, "review-general")]'
+                By.XPATH, paths['map_review_general']
             ).text
             map_info['number_of_reviews'] = review_ratings_div.find_element(
-                By.XPATH, './/span[contains(@class, "number-of-reviews")]'
+                By.XPATH, paths['map_num_of_reviews']
             ).text
-        elif review_ratings_div.find_elements(By.XPATH, './/span[contains(@class, "number-of-review") and contains(text(), "New")]'):
+        elif review_ratings_div.find_elements(By.XPATH, paths['map_new_reviews']):
             # Case: New listing, no reviews
             map_info['rating'] = "New"
             map_info['number_of_reviews'] = review_ratings_div.find_element(
-                By.XPATH, './/span[contains(@class, "number-of-review") and contains(text(), "New")]'
+                By.XPATH, paths['map_new_reviews']
             ).text
         else:
             # Raise an exception if no matching structure is found
-            raise Exception("Unable to extract rating and review details from the map section.")
+            raise Exception(
+                "Unable to extract rating and review details from the map section.")
 
         # Extract price
         map_info['price'] = wait.until(
             EC.presence_of_element_located(
-                (By.XPATH, './/span[contains(@class, "js-nearby-price-value")]')
+                (By.XPATH,
+                 paths['map_price'])
             )
         ).text
 
@@ -286,7 +299,7 @@ def extract_map_info(driver, wait_time=5):
     return map_info
 
 
-def generate_comparison_report( tile_data, map_data, hybrid_data, url, domain = "www.varoom.com",page = "Category", test_case = "Test for data consistency"):
+def generate_comparison_report(tile_data, map_data, hybrid_data, url, domain="www.varoom.com", page="Category", test_case="Test for data consistency"):
     """
     Generates an Excel report verifying the consistency of property details.
 
@@ -326,16 +339,48 @@ def generate_comparison_report( tile_data, map_data, hybrid_data, url, domain = 
         "Page": page,
         "Test Case": test_case,
         "Passed": passed,
-        "Comments": str(comments)  # Convert dictionary to string for readability
+        # Convert dictionary to string for readability
+        "Comments": str(comments)
     }]
 
     # Load existing report or create new
     try:
         existing_df = pd.read_excel(output_file)
-        df = pd.concat([existing_df, pd.DataFrame(report_data)], ignore_index=True)
+        df = pd.concat([existing_df, pd.DataFrame(
+            report_data)], ignore_index=True)
     except FileNotFoundError:
         df = pd.DataFrame(report_data)
 
     # Save updated report
     df.to_excel(output_file, index=False)
     print(f"Comparison report updated in {output_file}")
+
+
+def xpaths_for_category():
+    """
+    This function will return all the Xpaths responsible for category page.
+    """
+    xpaths_file = 'data/xpaths.xlsx'
+    # Make sure the 'base_url' is set as index
+    xpaths_df = pd.read_excel(xpaths_file, index_col=0)
+
+    page_type = 'Category'
+    page_xpaths = xpaths_df.loc[xpaths_df['page_type'] == page_type].iloc[0]
+
+    return page_xpaths
+
+
+def xpaths_for_hybrid():
+    # Load the Excel file
+    xpaths_file = 'data/xpaths.xlsx'  # Path to your Excel file
+    xpaths_df = pd.read_excel(xpaths_file)
+
+    # Filter rows for page_type = 'Hybrid'
+    page_type = 'Hybrid'
+    hybrid_xpaths = xpaths_df[xpaths_df['page_type'] == page_type]
+
+    if not hybrid_xpaths.empty:
+        # Convert the row to a dictionary and return
+        return hybrid_xpaths.iloc[0].to_dict()
+    else:
+        return "No xpaths found for Hybrid page type."

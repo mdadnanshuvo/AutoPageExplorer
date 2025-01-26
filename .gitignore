@@ -20,3 +20,6 @@ Thumbs.db
 # Ignore IDE/editor-specific settings
 .idea/
 .vscode/
+
+# Ignore temporary Excel files
+~$*.xlsx

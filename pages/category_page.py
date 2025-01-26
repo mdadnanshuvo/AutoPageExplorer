@@ -10,22 +10,15 @@ from utils.utility_func import is_category_page
 from .base_page import BasePage
 import time
 import random
-from utils.utility_func import generate_comparison_report
-
+from utils.utility_func import generate_comparison_report, xpaths_for_category
 
 
 class CategoryPage(BasePage):
+
     def __init__(self, driver):
-        
 
         super().__init__(driver)
-        self.locators = {
-            'property_tiles': '//div[contains(@class, "js-tiles-container")]',
-            'map_section': '//div[@id="map-info-window"]',
-            'map_content': '//div[@class="map-content"]',
-            'tile_container': '//div[@id="js-tiles-container"]',
-            'property_tile': './/div[contains(@class, "js-property-tile")]'
-        }
+        self.paths = xpaths_for_category()
         self.wait = WebDriverWait(driver, 5)  # Default wait time of 20 seconds
 
     def navigate_to(self, url):
@@ -35,7 +28,8 @@ class CategoryPage(BasePage):
         try:
             self.driver.get(url)
             self.wait.until(
-                lambda driver: driver.execute_script('return document.readyState') == 'complete'
+                lambda driver: driver.execute_script(
+                    'return document.readyState') == 'complete'
             )
             time.sleep(1)  # Additional wait for any dynamic content
         except Exception as e:
@@ -65,7 +59,8 @@ class CategoryPage(BasePage):
                 print(f"Error during navigation attempt {attempts + 1}: {e}")
                 attempts += 1
                 time.sleep(2)
-        raise Exception(f"Unable to find a valid Category Page after {max_attempts} attempts.")
+        raise Exception(f"Unable to find a valid Category Page after {
+                        max_attempts} attempts.")
 
     def get_total_tiles(self):
         """
@@ -77,7 +72,8 @@ class CategoryPage(BasePage):
         """Wait for the main tiles container to be present and visible."""
         try:
             container = self.wait.until(
-                EC.presence_of_element_located((By.XPATH, self.locators['tile_container']))
+                EC.presence_of_element_located(
+                    (By.XPATH, self.paths['tile_container']))
             )
             self.wait.until(EC.visibility_of(container))
             return container
@@ -103,13 +99,13 @@ class CategoryPage(BasePage):
 
             while len(loaded_tiles) < total_tiles and attempts < max_attempts:
                 self.driver.execute_script(
-                    "arguments[0].scrollTo({top: arguments[0].scrollHeight, behavior: 'smooth'});", 
+                    "arguments[0].scrollTo({top: arguments[0].scrollHeight, behavior: 'smooth'});",
                     container
                 )
                 time.sleep(scroll_pause_time)
                 loaded_tiles = container.find_elements(
                     By.XPATH,
-                    self.locators['property_tile']
+                    self.paths['property_tile']
                 )
 
                 if len(loaded_tiles) == last_count:
@@ -122,9 +118,9 @@ class CategoryPage(BasePage):
 
                 print(f"Loaded {len(loaded_tiles)} of {total_tiles} tiles...")
 
-           
             print(f"Finished loading tiles. Total loaded: {len(loaded_tiles)}")
-            self.driver.execute_script("window.scrollTo({top: 0, behavior: 'smooth'});")
+            self.driver.execute_script(
+                "window.scrollTo({top: 0, behavior: 'smooth'});")
             time.sleep(0.3)
             return loaded_tiles
         except Exception as e:
@@ -149,7 +145,8 @@ class CategoryPage(BasePage):
                     break
 
             tile = all_tiles[random_index]
-            print(f"\nProcessing tile {i + 1}/{num_tiles} (index: {random_index})")
+            print(f"\nProcessing tile {
+                  i + 1}/{num_tiles} (index: {random_index})")
 
             try:
                 self.scroll_to_tile(tile)
@@ -162,7 +159,8 @@ class CategoryPage(BasePage):
                             'index': random_index,
                             'data': data
                         })
-                        print(f"Successfully processed tile {i + 1}/{num_tiles}")
+                        print(f"Successfully processed tile {
+                              i + 1}/{num_tiles}")
                 except Exception as e:
                     print(f"Error processing tile {random_index}: {e}")
 
@@ -177,8 +175,9 @@ class CategoryPage(BasePage):
         Simplified scroll method to bring tile into view.
         """
         try:
-            self.driver.execute_script("arguments[0].scrollIntoView(true);", tile)
-            
+            self.driver.execute_script(
+                "arguments[0].scrollIntoView(true);", tile)
+
             self.driver.execute_script("window.scrollBy(0, -100);")
             time.sleep(1)
         except Exception as e:
@@ -208,7 +207,6 @@ class CategoryPage(BasePage):
                     raise Exception("No data extracted from tile")
                 print(f"Successfully extracted tile info: {tile_data}")
                 map_data = {}
-               
 
                 try:
                     if self.click_map_icon(tile):
@@ -216,26 +214,29 @@ class CategoryPage(BasePage):
                         time.sleep(0.5)
                         map_data = extract_map_info(self.driver, wait_time)
                         print(f"Successfully extracted map info: {map_data}")
-                        
-                        
+
                 except Exception as map_error:
-                    print(f"Map interaction failed or map data extraction issue: {map_error}")
+                    print(f"Map interaction failed or map data extraction issue: {
+                          map_error}")
                  # Navigate to and extract data from the hybrid page
                 hybrid_data = {}
                 try:
-                    hybrid_data = process_hybrid_page(self.driver, tile, wait_time)
-                    print(f"Successfully extracted hybrid page info: {hybrid_data}")
+                    hybrid_data = process_hybrid_page(
+                        self.driver, tile, wait_time)
+                    print(f"Successfully extracted hybrid page info: {
+                          hybrid_data}")
                 except Exception as hybrid_error:
-                    print(f"Hybrid page interaction failed or data extraction issue: {hybrid_error}")
-                
-                generate_comparison_report(tile_data,map_data,hybrid_data,url)
+                    print(f"Hybrid page interaction failed or data extraction issue: {
+                          hybrid_error}")
+
+                generate_comparison_report(
+                    tile_data, map_data, hybrid_data, url)
                 return {
                     'tile_data': tile_data,
                     'map_data': map_data,
                     'hybrid_data': hybrid_data,
                 }
-            
-            
+
             except Exception as e:
                 print(f"Attempt {attempt + 1} failed for tile: {e}")
                 attempt += 1
@@ -247,52 +248,33 @@ class CategoryPage(BasePage):
 
     def click_map_icon(self, tile):
         """
-        Enhanced map icon interaction.
-        """
+       Enhanced map icon interaction.
+       """
         try:
-            selectors = [
-                './/svg[@class="icon"]/*[local-name()="use" and contains(@xlink:href, "#map-marker-solid-icon-v1")]',
-                './/div[contains(@class, "map-icon")]',
-                './/div[contains(@class, "location-icon")]',
-                './/button[contains(@class, "map")]'
-            ]
-            for selector in selectors:
-                try:
-                    wait = WebDriverWait(tile, 1)
-                    map_icon = wait.until(
-                        EC.presence_of_element_located((By.XPATH, selector))
-                    )
-                    ActionChains(self.driver).move_to_element(map_icon).click().perform()
-                    print(f"Map icon clicked successfully using selector: {selector}")
-                    return True
-                except:
-                    continue
-            return False
+            selector = self.paths['map_icon']  # Use self.paths
+            wait = WebDriverWait(tile, 1)
+            map_icon = wait.until(
+                EC.presence_of_element_located((By.XPATH, selector))
+            )
+            ActionChains(self.driver).move_to_element(
+                map_icon).click().perform()
+            print(f"Map icon clicked successfully using selector: {selector}")
+            return True
         except Exception as e:
             print(f"Error clicking map icon: {e}")
             return False
 
     def wait_for_map_to_load(self, timeout=0.5):
-        """
-        More flexible map loading check.
-        """
+
         try:
             wait = WebDriverWait(self.driver, timeout)
-            selectors = [
-                self.locators['map_section'],
-                '//div[contains(@class, "map")]',
-                '//div[contains(@class, "location-view")]'
-            ]
-            for selector in selectors:
-                try:
-                    wait.until(EC.presence_of_element_located((By.XPATH, selector)))
-                    print("Map section loaded successfully.")
-                    return
-                except:
-                    continue
-            print("Map section not found with any selector.")
+            selector = self.paths['map_section']  # Use self.paths
+            wait.until(EC.presence_of_element_located((By.XPATH, selector)))
+            print("Map section loaded successfully.")
+            return
         except Exception as e:
             print(f"Error waiting for map section to load: {e}")
+            print("Map section not found with the selector.")
 
     def scroll_to_specific_tiles(self, all_tiles, tile_indices, smooth=True):
         """
@@ -320,8 +302,6 @@ class CategoryPage(BasePage):
                 time.sleep(0.2 if smooth else 0.5)
                 self.driver.execute_script("window.scrollBy(0, -100);")
                 time.sleep(0.1)
-
-                
 
                 time.sleep(random.uniform(0.2, 0.5))
             except Exception as e:
