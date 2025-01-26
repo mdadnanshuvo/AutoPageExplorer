@@ -308,3 +308,26 @@ class CategoryPage(BasePage):
                 print(f"Error scrolling to tile {index}: {e}")
                 continue
         return scrolled_tiles
+
+    def scroll_smoothly_to_bottom(self, pause_time=0.5):
+        """
+        Smoothly scrolls the page from top to bottom.
+        
+        Args:
+            pause_time (float): Time to wait between scroll increments.
+        """
+        last_height = self.driver.execute_script("return document.body.scrollHeight")
+        
+        while True:
+            # Scroll down by a small increment
+            self.driver.execute_script("window.scrollBy(0, 500);")
+            time.sleep(pause_time)
+            
+            # Calculate new scroll height and compare
+            new_height = self.driver.execute_script("return document.body.scrollHeight")
+            if new_height == last_height:
+                break  # Stop scrolling when the bottom is reached
+            
+            last_height = new_height
+
+
