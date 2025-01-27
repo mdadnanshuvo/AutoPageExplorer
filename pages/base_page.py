@@ -12,7 +12,9 @@ class BasePage:
         """
         Waits for an element to be present on the page.
         """
-        return WebDriverWait(self.driver, timeout).until(EC.presence_of_element_located(locator))
+        return WebDriverWait(self.driver, timeout).until(
+            EC.presence_of_element_located(locator)
+        )
 
     def get_element_text(self, locator):
         """
@@ -50,7 +52,9 @@ class BasePage:
         """
         Waits for an element to be clickable.
         """
-        return WebDriverWait(self.driver, timeout).until(EC.element_to_be_clickable(locator))
+        return WebDriverWait(self.driver, timeout).until(
+            EC.element_to_be_clickable(locator)
+        )
 
     def scroll_to_bottom(self):
         """
