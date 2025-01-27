@@ -2,9 +2,7 @@
 from pages.base_page import BasePage
 from utils.driver_utils import setup_driver
 from pages.category_page import CategoryPage
-import time
 import random
-
 
 def main():
     """

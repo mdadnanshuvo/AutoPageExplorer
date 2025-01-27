@@ -9,7 +9,7 @@ from utils.utility_func import (
     get_random_category_url,
     is_category_page,
     generate_comparison_report,
-    xpaths_for_category,
+    xpaths_for_category
 )
 import time
 
@@ -121,7 +121,7 @@ class CategoryPage(BasePage):
         """
         Processes a single tile, extracting data and generating a report.
         """
-        tile_data = extract_property_info(tile, wait_time)
+        tile_data, property_id = extract_property_info(tile)
         if not tile_data:
             raise Exception("Failed to extract data from tile.")
 
@@ -134,9 +134,8 @@ class CategoryPage(BasePage):
 
         # Extract hybrid page data
         hybrid_data = process_hybrid_page(self.driver, tile, wait_time)
-
         # Generate comparison report
-        generate_comparison_report(tile_data, map_data, hybrid_data, url)
+        generate_comparison_report(property_id,tile_data, map_data, hybrid_data, url)
 
         return {
             "tile_data": tile_data,

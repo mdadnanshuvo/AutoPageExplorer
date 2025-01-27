@@ -3,11 +3,6 @@ import pandas as pd
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
-import random
-from selenium.webdriver.common.by import By
-from selenium.webdriver.support.ui import WebDriverWait
-from selenium.webdriver.support import expected_conditions as EC
-import time
 from faker import Faker
 
 
@@ -27,79 +22,7 @@ def get_random_category_url(base_url="https://www.varoom.com/all/"):
     return f"{base_url}{country}"
 
 
-def scroll_and_load(
-    driver,
-    tiles_xpath,
-    total_tiles,
-    container=None,
-    center_tiles=False,
-    initial_scroll_time=0.1,
-):
-    """
-    Dynamically scrolls and loads elements matching the provided XPath within a specific container,
-    with an optional initial scrolling time and tile centralization.
 
-    Args:
-        driver (WebDriver): Selenium WebDriver instance.
-        tiles_xpath (str): XPath to locate tile elements.
-        total_tiles (int): Total number of tiles expected.
-        container (WebElement): Optional container element to scope the search.
-        center_tiles (bool): Scroll each tile to the center of the viewport if True.
-        initial_scroll_time (int): Time in seconds for initial dynamic scrolling.
-
-    Returns:
-        list: List of WebElements found.
-    """
-    # Perform initial scrolling to allow the page to load dynamically
-    start_time = time.time()
-    while time.time() - start_time < initial_scroll_time:
-        driver.execute_script("window.scrollBy(0, window.innerHeight);")
-
-    # Scroll and load tiles
-    loaded_tiles = []
-    scroll_attempts = 0
-    max_scroll_attempts = 20  # Adjust as necessary
-
-    # Use container if provided, otherwise scroll the document body
-    scroll_target = container if container else driver.find_element(By.TAG_NAME, "body")
-
-    while len(loaded_tiles) < total_tiles and scroll_attempts < max_scroll_attempts:
-        loaded_tiles = driver.find_elements(By.XPATH, tiles_xpath)
-        driver.execute_script(
-            "arguments[0].scrollTop = arguments[0].scrollHeight;", scroll_target
-        )
-        time.sleep(0.5)  # Allow time for loading
-        scroll_attempts += 1
-
-    # Optionally center each tile in the viewport
-    if center_tiles:
-        for tile in loaded_tiles:
-            try:
-                driver.execute_script(
-                    "arguments[0].scrollIntoView({block: 'center', inline: 'center'});",
-                    tile,
-                )
-                time.sleep(0.5)  # Allow smooth scrolling
-            except Exception as e:
-                print(f"Error centering tile: {e}")
-
-    return loaded_tiles
-
-
-def select_random_elements(elements, count=10):
-    """
-    Selects a random subset of elements from a given list.
-
-    Args:
-        elements (list): List of elements to choose from.
-        count (int): Number of random elements to select.
-
-    Returns:
-        list: Randomly selected elements.
-    """
-    if len(elements) <= count:
-        return elements
-    return random.sample(elements, count)
 
 
 def get_total_tiles_count(driver):
@@ -137,26 +60,32 @@ def is_category_page(driver):
         print(f"Error while checking ScriptData.pageLayout: {e}")
         return False
 
-
-def extract_property_info(tile, wait_time=0.5):
+def extract_property_info(tile, wait_time=1.5):
     """
-    Extracts property information from a tile element.
+    Extracts property information and the data-id from a tile element.
 
     Args:
         tile (WebElement): The tile element.
         wait_time (float): Maximum time to wait for elements to load.
 
     Returns:
-        dict: A dictionary containing the property information from the tile.
+        tuple: A tuple containing:
+            - dict: A dictionary with the property information from the tile.
+            - str: The property_id extracted from the data-id attribute.
 
     Raises:
         Exception: If any required element is missing.
     """
-    paths = xpaths_for_category()
+    paths = xpaths_for_category()  # Function must return a dictionary of XPath mappings
     info = {}
     wait = WebDriverWait(tile, wait_time)
 
     try:
+        # Extract property ID (data-id attribute)
+        property_id = tile.get_attribute("data-id")
+        if not property_id:
+            raise Exception("data-id attribute not found in tile element.")
+
         # Extract property type
         info["property_type"] = wait.until(
             EC.presence_of_element_located((By.XPATH, paths["property_type"]))
@@ -174,7 +103,6 @@ def extract_property_info(tile, wait_time=0.5):
 
         # Handle dynamic rating and review structures
         if rating_review_div.find_elements(By.XPATH, paths["review_general"]):
-            # Case 1: Standard rating and reviews
             info["rating"] = rating_review_div.find_element(
                 By.XPATH, paths["review_general"]
             ).text
@@ -183,42 +111,35 @@ def extract_property_info(tile, wait_time=0.5):
             ).text
 
         elif rating_review_div.find_elements(By.XPATH, paths["star_ratings"]):
-            # Case 2: Star-based ratings with a divider
             star_rating = rating_review_div.find_element(
                 By.XPATH, paths["star_ratings"]
             ).get_attribute("class")
-            info["rating"] = star_rating.split("star-icons-")[
-                -1
-            ]  # Extract the number of stars
+            info["rating"] = star_rating.split("star-icons-")[-1]
             info["number_of_reviews"] = rating_review_div.find_element(
                 By.XPATH, paths["number_of_reviews"]
             ).text
 
         elif rating_review_div.find_elements(By.XPATH, paths["number_of_reviews"]):
-            # Case 3: New or no rating, only reviews
             info["rating"] = "New"
             info["number_of_reviews"] = rating_review_div.find_element(
                 By.XPATH, paths["number_of_reviews"]
             ).text
 
         else:
-            raise Exception("Unable to extract rating and review details.")
+            info["rating"] = "N/A"
+            info["number_of_reviews"] = "N/A"
 
         # Extract price
         price_text = wait.until(
             EC.presence_of_element_located((By.XPATH, paths["price_info"]))
         ).text
-        # This removes the first word and keeps the rest
-        price = price_text.split(" ", 1)[1]
-
-        # Store the price
-        info["price"] = price
+        info["price"] = price_text.split(" ", 1)[1] if " " in price_text else price_text
 
     except Exception as e:
         print(f"Error extracting property info from tile: {e}")
         raise
+    return info, property_id
 
-    return info
 
 
 def extract_map_info(driver, wait_time=5):
@@ -289,6 +210,7 @@ def extract_map_info(driver, wait_time=5):
 
 
 def generate_comparison_report(
+    ID,
     tile_data,
     map_data,
     hybrid_data,
@@ -312,6 +234,7 @@ def generate_comparison_report(
     Returns:
         None. Saves an Excel report in the `data` folder with `test_reports.xlsx` as the file name.
     """
+
     # Ensure the 'data' directory exists
     output_dir = "data"
     os.makedirs(output_dir, exist_ok=True)
@@ -324,6 +247,7 @@ def generate_comparison_report(
 
     # Format comments with detailed comparison
     comments = {
+        "ID": ID,
         "tile_info": tile_data,
         "map_info_window": map_data,
         "details_info": hybrid_data,
