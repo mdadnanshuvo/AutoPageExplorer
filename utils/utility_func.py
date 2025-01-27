@@ -5,7 +5,6 @@ from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 from faker import Faker
 
-
 def get_random_category_url(base_url="https://www.varoom.com/all/"):
     """
     Generates a random category URL by appending a random country to the base URL.
@@ -20,10 +19,6 @@ def get_random_category_url(base_url="https://www.varoom.com/all/"):
     # Replace spaces with dashes for URL compatibility
     country = faker.country().replace(" ", "-").lower()
     return f"{base_url}{country}"
-
-
-
-
 
 def get_total_tiles_count(driver):
     """
@@ -40,7 +35,6 @@ def get_total_tiles_count(driver):
         return total_tiles
     except Exception as e:
         return 0
-
 
 def is_category_page(driver):
     """
@@ -139,8 +133,6 @@ def extract_property_info(tile, wait_time=1.5):
         print(f"Error extracting property info from tile: {e}")
         raise
     return info, property_id
-
-
 
 def extract_map_info(driver, wait_time=5):
     """

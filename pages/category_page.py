@@ -13,7 +13,6 @@ from utils.utility_func import (
 )
 import time
 
-
 class CategoryPage(BasePage):
     def __init__(self, driver):
         super().__init__(driver)

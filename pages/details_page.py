@@ -21,6 +21,7 @@ def process_hybrid_page(driver, tile, wait_time=10):
     Raises:
         Exception: If any required element is missing or unavailable.
     """
+    # Instantiate BasePage class with the driver
     paths = xpaths_for_hybrid()
     original_window = driver.current_window_handle
 
@@ -62,8 +63,7 @@ def process_hybrid_page(driver, tile, wait_time=10):
             hybrid_data["property_type"] = words[1]
         else:
             raise Exception(
-                f"Unexpected format for availability title: {
-                            availability_title}"
+                f"Unexpected format for availability title: {availability_title}"
             )
 
         # Extract rating and reviews dynamically
