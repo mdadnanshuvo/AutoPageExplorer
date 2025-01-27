@@ -1,5 +1,5 @@
 # main.py
-
+from pages.base_page import  BasePage
 from utils.driver_utils import setup_driver
 from pages.category_page import CategoryPage
 import time
@@ -24,10 +24,15 @@ def main():
         category_page = CategoryPage(driver)
         valid_url = category_page.navigate_to_valid_category_page()
         print(f"\nNavigated to valid category page: {valid_url}")
+        
+        print("waiting for the map to be loaded")
+        category_page.wait_for_map_to_load(5)
+        
+        base_page = BasePage(driver)
 
         # Smoothly scroll to the bottom of the page
         print("\n=== Scrolling the Category Page ===")
-        category_page.scroll_smoothly_to_bottom(pause_time=0.5)
+        base_page.scroll_from_top_to_bottom_and_back()
         print("Page scrolling completed")
 
         # Get total tiles after scrolling
@@ -38,7 +43,7 @@ def main():
         all_tiles = category_page.load_all_property_tiles(total_tiles)
         print(f"Loaded {len(all_tiles)} tiles")
 
-        random_tiles = random.sample(all_tiles, 10)
+        random_tiles = random.sample(all_tiles, min(len(all_tiles),10))
 
         # Process tiles one by one
         print("\n=== Processing Individual Tiles ===")

@@ -1,6 +1,8 @@
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.common.by import By
+import time
+
 
 class BasePage:
     def __init__(self, driver):
@@ -49,3 +51,24 @@ class BasePage:
         Waits for an element to be clickable.
         """
         return WebDriverWait(self.driver, timeout).until(EC.element_to_be_clickable(locator))
+
+    def scroll_to_bottom(self):
+        """
+        Scrolls to the bottom of the page.
+        """
+        self.driver.execute_script("window.scrollTo(0, document.body.scrollHeight);")
+        time.sleep(2)  # Adjust the sleep time if necessary
+
+    def scroll_to_top(self):
+        """
+        Scrolls to the top of the page.
+        """
+        self.driver.execute_script("window.scrollTo(0, 0);")
+        time.sleep(2)  # Adjust the sleep time if necessary
+
+    def scroll_from_top_to_bottom_and_back(self):
+        """
+        Scrolls from the top to the bottom of the page and then back to the top.
+        """
+        self.scroll_to_bottom()
+        self.scroll_to_top()
